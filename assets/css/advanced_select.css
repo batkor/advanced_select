@@ -1,0 +1,40 @@
+[id*='advanced_select']{
+  display: flex;
+  flex-wrap: wrap;
+  max-width: 100%;
+}
+
+[id*='advanced_select'] .item{
+  margin-right: 10px;
+  margin-bottom: 10px;
+  border: 1px solid rgba(128, 128, 128, 0.32);
+  background-color: #e7e7e7;
+  transition: box-shadow .3s ease;
+  padding: 5px;
+  cursor: pointer;
+}
+
+[id*='advanced_select'] .item:hover{
+  box-shadow: 0 0 5px;
+}
+[id*='advanced_select'] .item.selected{
+  box-shadow: 0 0 10px;
+}
+
+[id*='advanced_select'] .item .label{
+  text-align: center;
+  font-size: 12px;
+  font-weight: normal;
+  display: block;
+}
+[id*='advanced_select'] .item .img{
+  display: flex;
+  width: 100%;
+  height: 50px;
+  justify-content: center;
+  align-items: center;
+}
+
+[id*='advanced_select'] img{
+  max-width: 100%;
+}

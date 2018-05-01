@@ -1,0 +1,6 @@
+main:
+  js:
+    assets/js/advanced_select.js: {}
+  css:
+    base:
+      assets/css/advanced_select.css: {}
