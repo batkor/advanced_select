@@ -30,12 +30,11 @@
 [id*='advanced_select'] .item .img{
   display: flex;
   width: 100%;
-  max-width: 50px;
   height: 50px;
   justify-content: center;
   align-items: center;
 }
 
 [id*='advanced_select'] img{
-  max-width: 100%;
+  max-width: 50px;
 }
