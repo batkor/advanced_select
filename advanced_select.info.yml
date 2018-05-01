@@ -1,5 +1,5 @@
-name: 'advanced select'
+name: 'Advanced Select'
 type: module
-description: 'My Awesome Module'
+description: 'Advanced select widget for list type field'
 core: 8.x
 package: 'Custom'
