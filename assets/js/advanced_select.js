@@ -6,21 +6,28 @@
       as_elems.once().each(function () {
         var elem = $(this);
         var field_name = elem.data('advanced_select');
-        var selecteds = elem.val();
+        var selecteds = getSelectedOptions(elem);
         elem.after(generateAdvancedElement(field_name, selecteds, as_settings[field_name]));
         setEvents(field_name);
       });
     }
   };
 
-  function generateAdvancedElement(field_name, selecteds, data) {
+  function getSelectedOptions(elem) {
+    output = [];
+    elem.find('option').each(function () {
+      if(typeof $(this).attr('selected') !== 'undefined'){
+        output.push($(this).val())
+      }
+    });
+    return output;
+  }
 
-    if (typeof selecteds === 'string') {
-      selecteds = [selecteds];
-    }
+  function generateAdvancedElement(field_name, selecteds, data) {
 
     var output = '<div id="advanced_select_' + field_name + '">';
     $.each(data, function (ind, elem) {
+      console.log(ind)
       var select = ($.inArray(ind, selecteds) + 1) ? " selected" : "";
       output += '<div class="item' + select + '" data-value="' + ind + '">';
       output += '<div class="img">';

@@ -105,6 +105,21 @@ class AdvancedSelectFieldWidget extends OptionsWidgetBase {
   /**
    * {@inheritdoc}
    */
+  public function settingsSummary() {
+    $elems = [];
+    foreach ($this->getSetting('values') as $item) {
+      $elems[] = $item['label'];
+    }
+
+    $summary = [];
+    $summary[] = t('Elements: @elems', ['@elems' => implode(', ', $elems)]);
+
+    return $summary;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
   public function formElement(FieldItemListInterface $items, $delta, array $element, array &$form, FormStateInterface $form_state) {
     $element = parent::formElement($items, $delta, $element, $form, $form_state);
     $field_name = $this->fieldDefinition->getName();
