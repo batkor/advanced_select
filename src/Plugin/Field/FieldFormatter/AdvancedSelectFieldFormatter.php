@@ -31,7 +31,7 @@ class AdvancedSelectFieldFormatter extends FormatterBase {
    */
   public static function defaultSettings() {
     return [
-        // Implement default settings.
+        'image_style' => '',
       ] + parent::defaultSettings();
   }
 
@@ -39,8 +39,16 @@ class AdvancedSelectFieldFormatter extends FormatterBase {
    * {@inheritdoc}
    */
   public function settingsForm(array $form, FormStateInterface $form_state) {
+    $image_styles = image_style_options(FALSE);
+
     return [
-        // Implement settings form.
+        'image_style' => [
+          '#title' => t('Image style'),
+          '#type' => 'select',
+          '#default_value' => $this->getSetting('image_style'),
+          '#empty_option' => t('None (original image)'),
+          '#options' => $image_styles,
+        ],
       ] + parent::settingsForm($form, $form_state);
   }
 
@@ -50,7 +58,13 @@ class AdvancedSelectFieldFormatter extends FormatterBase {
   public function settingsSummary() {
     $summary = [];
 
-    // Implement settings summary.
+    if (empty($this->getSetting('image_style'))) {
+      $summary[] = t('Original image');
+    }
+    else {
+      $image_styles = image_style_options(FALSE);
+      $summary[] = t('Image style: @style', ['@style' => $image_styles[$this->getSetting('image_style')]]);
+    }
 
     return $summary;
   }
@@ -110,12 +124,24 @@ class AdvancedSelectFieldFormatter extends FormatterBase {
 
     if (!empty($widgetSettings[$value]['img']['fids'])) {
       $file = File::load($widgetSettings[$value]['img']['fids']);
-      $render = [
-        '#theme' => 'image',
-        '#uri' => $file->getFileUri(),
-        '#prefix' => '<div class="img">',
-        '#suffix' => '</div>',
-      ];
+      if (empty($this->getSetting('image_style'))) {
+        $render = [
+          '#theme' => 'image',
+          '#uri' => $file->getFileUri(),
+          '#prefix' => '<div class="img">',
+          '#suffix' => '</div>',
+        ];
+      }
+      else {
+        $render = [
+          '#theme' => 'image_style',
+          '#style_name' => $this->getSetting('image_style'),
+          '#uri' => $file->getFileUri(),
+          '#prefix' => '<div class="img">',
+          '#suffix' => '</div>',
+        ];
+      }
+
       $render = \Drupal::service('renderer')
                        ->render($render);
     }
