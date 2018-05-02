@@ -16,20 +16,9 @@ function advanced_select_help($route_name, RouteMatchInterface $route_match) {
     case 'help.page.advanced_select':
       $output = '';
       $output .= '<h3>' . t('About') . '</h3>';
-      $output .= '<p>' . t('My Awesome Module') . '</p>';
+      $output .= '<p>' . t('Advanced select widget for list type field') . '</p>';
       return $output;
 
     default:
   }
-}
-
-/**
- * Implements hook_theme().
- */
-function advanced_select_theme() {
-  return [
-    'advanced_select' => [
-      'render element' => 'children',
-    ],
-  ];
 }

@@ -2,12 +2,8 @@
 
 namespace Drupal\advanced_select\Plugin\Field\FieldWidget;
 
-use Drupal\Component\Utility\NestedArray;
-use Drupal\Component\Utility\SortArray;
 use Drupal\Core\Field\FieldItemListInterface;
-use Drupal\Core\Field\FieldStorageDefinitionInterface;
 use Drupal\Core\Field\Plugin\Field\FieldWidget\OptionsWidgetBase;
-use Drupal\Core\Field\WidgetBase;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\file\Entity\File;
 
@@ -87,12 +83,15 @@ class AdvancedSelectFieldWidget extends OptionsWidgetBase {
       }
     }
     else {
-      \Drupal\Core\Form\drupal_set_message('Не удалось создать каталог для поля');
+      \Drupal\Core\Form\drupal_set_message($this->t('Could not create directory'));
     }
 
     return $elements;
   }
 
+  /**
+   * {@inheritdoc}
+   */
   public function settingsFormImgValidate($element, FormStateInterface $form_state) {
     if (!empty($element['#value']['fids'])) {
       $file = File::load($element['#value']['fids']['0']);
@@ -143,6 +142,9 @@ class AdvancedSelectFieldWidget extends OptionsWidgetBase {
     return $element;
   }
 
+  /**
+   * {@inheritdoc}
+   */
   public function getImgUrl() {
     $output = [];
     foreach ($this->getSetting('values') as $key => $item) {

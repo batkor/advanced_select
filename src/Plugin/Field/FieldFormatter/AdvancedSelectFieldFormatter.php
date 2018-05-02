@@ -3,6 +3,7 @@
 namespace Drupal\advanced_select\Plugin\Field\FieldFormatter;
 
 use Drupal\Core\Config\Entity\ConfigEntityStorageInterface;
+use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Field\FieldDefinitionInterface;
 use Drupal\Core\Field\FieldItemInterface;
 use Drupal\Core\Field\FieldItemListInterface;
@@ -11,7 +12,6 @@ use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Form\OptGroup;
 use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
 use Drupal\Core\Url;
-use Drupal\file\Entity\File;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
@@ -31,11 +31,18 @@ class AdvancedSelectFieldFormatter extends FormatterBase implements ContainerFac
   protected $fieldOptions;
 
   /**
-   * The entity manager service
+   * The entity form display service
    *
    * @var \Drupal\Core\Config\Entity\ConfigEntityStorageInterface
    */
   protected $entityFormDisplay;
+
+  /**
+   * The Entity Manager service
+   *
+   * @var \Drupal\Core\Entity\EntityTypeManagerInterface
+   */
+  protected $entityManager;
 
   public static function create(ContainerInterface $container, array $configuration, $plugin_id, $plugin_definition) {
     return new static(
@@ -46,17 +53,19 @@ class AdvancedSelectFieldFormatter extends FormatterBase implements ContainerFac
       $configuration['label'],
       $configuration['view_mode'],
       $configuration['third_party_settings'],
-      $container->get('entity_type.manager')->getStorage('entity_form_display')
+      $container->get('entity_type.manager')->getStorage('entity_form_display'),
+      $container->get('entity.manager')
     );
   }
 
   /**
    * Construct a advanced_select_field_formatter object.
    */
-  public function __construct($plugin_id, $plugin_definition, FieldDefinitionInterface $field_definition, array $settings, $label, $view_mode, array $third_party_settings, ConfigEntityStorageInterface $entityFormDisplay) {
+  public function __construct($plugin_id, $plugin_definition, FieldDefinitionInterface $field_definition, array $settings, $label, $view_mode, array $third_party_settings, ConfigEntityStorageInterface $entityFormDisplay, EntityTypeManagerInterface $entityManager) {
     parent::__construct($plugin_id, $plugin_definition, $field_definition, $settings, $label, $view_mode, $third_party_settings);
 
     $this->entityFormDisplay = $entityFormDisplay;
+    $this->entityManager = $entityManager;
   }
 
   /**
@@ -140,6 +149,9 @@ class AdvancedSelectFieldFormatter extends FormatterBase implements ContainerFac
     return $summary;
   }
 
+  /**
+   * {@inheritdoc}
+   */
   public function getAllFormDisplay() {
     $form_modes = [];
     $displays = $this->entityFormDisplay->loadMultiple();
@@ -151,6 +163,9 @@ class AdvancedSelectFieldFormatter extends FormatterBase implements ContainerFac
     return $form_modes;
   }
 
+  /**
+   * {@inheritdoc}
+   */
   public function setWidgetWettings(FieldItemListInterface $items) {
 
     $field_name = $items->getName();
@@ -161,6 +176,9 @@ class AdvancedSelectFieldFormatter extends FormatterBase implements ContainerFac
     $this->widgetSettings = $form_display->getComponent($field_name)['settings'];
   }
 
+  /**
+   * {@inheritdoc}
+   */
   public function setFieldOptions($items) {
     $provider = $items->getFieldDefinition()
                       ->getFieldStorageDefinition()
@@ -192,10 +210,12 @@ class AdvancedSelectFieldFormatter extends FormatterBase implements ContainerFac
     $widgetSettings = $this->widgetSettings['values'];
     $value = $item->value;
     $options = $this->fieldOptions;
+    $fileEntity = $this->entityManager->getStorage('file');
 
     // render img
     if (!empty($widgetSettings[$value]['img']['fids'])) {
-      $file = File::load($widgetSettings[$value]['img']['fids']);
+      $fid = $widgetSettings[$value]['img']['fids'];
+      $file = $fileEntity->load($fid);
       $class_image = $this->getSetting('image_class');
       if (empty($this->getSetting('image_style'))) {
         $render = [
@@ -219,7 +239,6 @@ class AdvancedSelectFieldFormatter extends FormatterBase implements ContainerFac
     }
 
     // render label
-
     $label = isset($options[$value]) ? $options[$value] : $value;
     $output[] = [
       '#type' => 'inline_template',
