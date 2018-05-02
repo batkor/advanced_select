@@ -61,20 +61,20 @@ class AdvancedSelectFieldWidget extends OptionsWidgetBase {
             flex-basis: 33.33%; margin-bottom: 10px;}',
       ];
 
-      foreach ($allowed_values as $allowed_value) {
-        $default_img = empty($default_values) ? NULL : $default_values[$allowed_value]['img'];
-        $elements['values'][$allowed_value] = [
+      foreach ($allowed_values as $key => $allowed_value) {
+        $default_img = empty($default_values) ? NULL : $default_values[$key]['img'];
+        $elements['values'][$key] = [
           '#type' => 'container',
           '#element_validate' => [
             [$this, 'settingsFormSaveValidate'],
           ],
         ];
-        $elements['values'][$allowed_value]['label'] = [
+        $elements['values'][$key]['label'] = [
           '#type' => 'textfield',
           '#value' => $allowed_value,
           '#disabled' => TRUE,
         ];
-        $elements['values'][$allowed_value]['img'] = [
+        $elements['values'][$key]['img'] = [
           '#type' => 'managed_file',
           '#title' => 'Изображение',
           '#upload_location' => $folder,
