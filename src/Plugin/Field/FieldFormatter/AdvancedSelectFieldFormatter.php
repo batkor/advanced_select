@@ -10,6 +10,7 @@ use Drupal\Core\Field\FormatterBase;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Form\OptGroup;
 use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
+use Drupal\Core\Url;
 use Drupal\file\Entity\File;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
@@ -67,6 +68,7 @@ class AdvancedSelectFieldFormatter extends FormatterBase implements ContainerFac
         'image_class' => 'img',
         'value_class' => 'value',
         'value_tag' => 'p',
+        'form_mode' => 'default',
       ] + parent::defaultSettings();
   }
 
@@ -76,7 +78,23 @@ class AdvancedSelectFieldFormatter extends FormatterBase implements ContainerFac
   public function settingsForm(array $form, FormStateInterface $form_state) {
     $image_styles = image_style_options(FALSE);
 
+    $form_modes = $this->getAllFormDisplay();
+    $url = Url::fromRoute('entity.entity_form_display.node.default',
+      [
+        'node_type' => $this->fieldDefinition->getTargetBundle(),
+      ]
+    );
+
     return [
+        'form_mode' => [
+          '#title' => $this->t('Form display'),
+          '#type' => 'select',
+          '#default_value' => $this->getSetting('form_mode'),
+          '#options' => $form_modes,
+          '#description' => $this->t('Select form display <a href="@url" target="_blank">from</a>', [
+            '@url' => $url->toString(),
+          ]),
+        ],
         'image_style' => [
           '#title' => $this->t('Image style'),
           '#type' => 'select',
@@ -122,12 +140,24 @@ class AdvancedSelectFieldFormatter extends FormatterBase implements ContainerFac
     return $summary;
   }
 
+  public function getAllFormDisplay() {
+    $form_modes = [];
+    $displays = $this->entityFormDisplay->loadMultiple();
+    foreach ($displays as $display) {
+      $toArray = $display->toArray();
+      $form_modes[$toArray['mode']] = $toArray['mode'];
+    }
+
+    return $form_modes;
+  }
+
   public function setWidgetWettings(FieldItemListInterface $items) {
 
     $field_name = $items->getName();
     $field_entity_type_id = $items->getEntity()->getEntityTypeId();
     $field_entity_bundle = $items->getEntity()->bundle();
-    $form_display = $this->entityFormDisplay->load($field_entity_type_id . '.' . $field_entity_bundle . '.default');
+    $display = $this->getSetting('form_mode');
+    $form_display = $this->entityFormDisplay->load($field_entity_type_id . '.' . $field_entity_bundle . '.' . $display);
     $this->widgetSettings = $form_display->getComponent($field_name)['settings'];
   }
 
