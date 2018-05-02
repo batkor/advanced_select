@@ -112,7 +112,7 @@ class AdvancedSelectFieldWidget extends OptionsWidgetBase {
     }
 
     $summary = [];
-    $summary[] = t('Elements: @elems', ['@elems' => implode(', ', $elems)]);
+    $summary[] = $this->t('Elements: @elems', ['@elems' => implode(', ', $elems)]);
 
     return $summary;
   }

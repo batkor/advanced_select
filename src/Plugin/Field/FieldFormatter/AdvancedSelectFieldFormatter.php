@@ -2,13 +2,16 @@
 
 namespace Drupal\advanced_select\Plugin\Field\FieldFormatter;
 
-use Drupal\Component\Utility\Html;
+use Drupal\Core\Config\Entity\ConfigEntityStorageInterface;
+use Drupal\Core\Field\FieldDefinitionInterface;
 use Drupal\Core\Field\FieldItemInterface;
 use Drupal\Core\Field\FieldItemListInterface;
 use Drupal\Core\Field\FormatterBase;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Form\OptGroup;
+use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
 use Drupal\file\Entity\File;
+use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
  * Plugin implementation of the 'advanced_select_field_formatter' formatter.
@@ -21,10 +24,39 @@ use Drupal\file\Entity\File;
  *   }
  * )
  */
-class AdvancedSelectFieldFormatter extends FormatterBase {
+class AdvancedSelectFieldFormatter extends FormatterBase implements ContainerFactoryPluginInterface {
 
-  private $widgetSettings;
-  private $fieldOptions;
+  protected $widgetSettings;
+  protected $fieldOptions;
+
+  /**
+   * The entity manager service
+   *
+   * @var \Drupal\Core\Config\Entity\ConfigEntityStorageInterface
+   */
+  protected $entityFormDisplay;
+
+  public static function create(ContainerInterface $container, array $configuration, $plugin_id, $plugin_definition) {
+    return new static(
+      $plugin_id,
+      $plugin_definition,
+      $configuration['field_definition'],
+      $configuration['settings'],
+      $configuration['label'],
+      $configuration['view_mode'],
+      $configuration['third_party_settings'],
+      $container->get('entity_type.manager')->getStorage('entity_form_display')
+    );
+  }
+
+  /**
+   * Construct a advanced_select_field_formatter object.
+   */
+  public function __construct($plugin_id, $plugin_definition, FieldDefinitionInterface $field_definition, array $settings, $label, $view_mode, array $third_party_settings, ConfigEntityStorageInterface $entityFormDisplay) {
+    parent::__construct($plugin_id, $plugin_definition, $field_definition, $settings, $label, $view_mode, $third_party_settings);
+
+    $this->entityFormDisplay = $entityFormDisplay;
+  }
 
   /**
    * {@inheritdoc}
@@ -34,6 +66,7 @@ class AdvancedSelectFieldFormatter extends FormatterBase {
         'image_style' => '',
         'image_class' => 'img',
         'value_class' => 'value',
+        'value_tag' => 'p',
       ] + parent::defaultSettings();
   }
 
@@ -45,23 +78,29 @@ class AdvancedSelectFieldFormatter extends FormatterBase {
 
     return [
         'image_style' => [
-          '#title' => t('Image style'),
+          '#title' => $this->t('Image style'),
           '#type' => 'select',
           '#default_value' => $this->getSetting('image_style'),
-          '#empty_option' => t('None (original image)'),
+          '#empty_option' => $this->t('None (original image)'),
           '#options' => $image_styles,
         ],
         'image_class' => [
-          '#title' => t('Image class'),
+          '#title' => $this->t('Image class'),
           '#type' => 'textfield',
           '#default_value' => $this->getSetting('image_class'),
-          '#description' => t('Class for image wrapper'),
+          '#description' => $this->t('Class for image wrapper'),
         ],
         'value_class' => [
-          '#title' => t('Value class'),
+          '#title' => $this->t('Value class'),
           '#type' => 'textfield',
           '#default_value' => $this->getSetting('value_class'),
-          '#description' => t('Class for value'),
+          '#description' => $this->t('Class for value'),
+        ],
+        'value_tag' => [
+          '#title' => $this->t('Value HTML tag'),
+          '#type' => 'textfield',
+          '#default_value' => $this->getSetting('value_tag'),
+          '#description' => $this->t('HTML tag for value'),
         ],
       ] + parent::settingsForm($form, $form_state);
   }
@@ -73,23 +112,22 @@ class AdvancedSelectFieldFormatter extends FormatterBase {
     $summary = [];
 
     if (empty($this->getSetting('image_style'))) {
-      $summary[] = t('Original image');
+      $summary[] = $this->t('Original image');
     }
     else {
       $image_styles = image_style_options(FALSE);
-      $summary[] = t('Image style: @style', ['@style' => $image_styles[$this->getSetting('image_style')]]);
+      $summary[] = $this->t('Image style: @style', ['@style' => $image_styles[$this->getSetting('image_style')]]);
     }
 
     return $summary;
   }
 
-  public function setWidgetWettings($items) {
+  public function setWidgetWettings(FieldItemListInterface $items) {
+
     $field_name = $items->getName();
     $field_entity_type_id = $items->getEntity()->getEntityTypeId();
     $field_entity_bundle = $items->getEntity()->bundle();
-    $form_display = \Drupal::entityTypeManager()
-                           ->getStorage('entity_form_display')
-                           ->load($field_entity_type_id . '.' . $field_entity_bundle . '.default');
+    $form_display = $this->entityFormDisplay->load($field_entity_type_id . '.' . $field_entity_bundle . '.default');
     $this->widgetSettings = $form_display->getComponent($field_name)['settings'];
   }
 
@@ -110,7 +148,7 @@ class AdvancedSelectFieldFormatter extends FormatterBase {
     $this->setFieldOptions($items);
 
     foreach ($items as $delta => $item) {
-      $elements[$delta] = ['#markup' => $this->viewValue($item)];
+      $elements[$delta] = $this->viewValue($item);
     }
 
     return $elements;
@@ -118,24 +156,14 @@ class AdvancedSelectFieldFormatter extends FormatterBase {
 
   /**
    * Generate the output appropriate for one field item.
-   *
-   * @param \Drupal\Core\Field\FieldItemInterface $item
-   *   One field item.
-   *
-   * @return string
-   *   The textual output generated.
    */
   protected function viewValue(FieldItemInterface $item) {
-    $render = [];
+
+    $widgetSettings = $this->widgetSettings['values'];
     $value = $item->value;
     $options = $this->fieldOptions;
-    $widgetSettings = $this->widgetSettings['values'];
-    // If the stored value is in the current set of allowed values, display
-    // the associated label, otherwise just display the raw value.
-    $output = isset($options[$value]) ? $options[$value] : $value;
 
-    $output = "<p class='{$this->getSetting('value_class')}'>$output</p>";
-
+    // render img
     if (!empty($widgetSettings[$value]['img']['fids'])) {
       $file = File::load($widgetSettings[$value]['img']['fids']);
       $class_image = $this->getSetting('image_class');
@@ -157,11 +185,23 @@ class AdvancedSelectFieldFormatter extends FormatterBase {
         ];
       }
 
-      $render = \Drupal::service('renderer')
-                       ->render($render);
+      $output[] = $render;
     }
 
-    return $render . $output;
+    // render label
+
+    $label = isset($options[$value]) ? $options[$value] : $value;
+    $output[] = [
+      '#type' => 'inline_template',
+      '#template' => "<{{tag}} class='{{class}}'>{{label}}</{{tag}}>",
+      '#context' => [
+        'label' => $label,
+        'tag' => $this->getSetting('value_tag'),
+        'class' => $this->getSetting('value_class'),
+      ],
+    ];
+
+    return $output;
   }
 
 }
