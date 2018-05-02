@@ -3,3 +3,6 @@ type: module
 description: 'Advanced select widget for list type field'
 core: 8.x
 package: 'Custom'
+
+dependencies:
+  - drupal:options

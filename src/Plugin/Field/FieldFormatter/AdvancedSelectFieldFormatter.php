@@ -32,6 +32,8 @@ class AdvancedSelectFieldFormatter extends FormatterBase {
   public static function defaultSettings() {
     return [
         'image_style' => '',
+        'image_class' => 'img',
+        'value_class' => 'value',
       ] + parent::defaultSettings();
   }
 
@@ -48,6 +50,18 @@ class AdvancedSelectFieldFormatter extends FormatterBase {
           '#default_value' => $this->getSetting('image_style'),
           '#empty_option' => t('None (original image)'),
           '#options' => $image_styles,
+        ],
+        'image_class' => [
+          '#title' => t('Image class'),
+          '#type' => 'textfield',
+          '#default_value' => $this->getSetting('image_class'),
+          '#description' => t('Class for image wrapper'),
+        ],
+        'value_class' => [
+          '#title' => t('Value class'),
+          '#type' => 'textfield',
+          '#default_value' => $this->getSetting('value_class'),
+          '#description' => t('Class for value'),
         ],
       ] + parent::settingsForm($form, $form_state);
   }
@@ -120,15 +134,16 @@ class AdvancedSelectFieldFormatter extends FormatterBase {
     // the associated label, otherwise just display the raw value.
     $output = isset($options[$value]) ? $options[$value] : $value;
 
-    $output = "<p class='value'>$output</p>";
+    $output = "<p class='{$this->getSetting('value_class')}'>$output</p>";
 
     if (!empty($widgetSettings[$value]['img']['fids'])) {
       $file = File::load($widgetSettings[$value]['img']['fids']);
+      $class_image = $this->getSetting('image_class');
       if (empty($this->getSetting('image_style'))) {
         $render = [
           '#theme' => 'image',
           '#uri' => $file->getFileUri(),
-          '#prefix' => '<div class="img">',
+          '#prefix' => '<div class="' . $class_image . '">',
           '#suffix' => '</div>',
         ];
       }
@@ -137,7 +152,7 @@ class AdvancedSelectFieldFormatter extends FormatterBase {
           '#theme' => 'image_style',
           '#style_name' => $this->getSetting('image_style'),
           '#uri' => $file->getFileUri(),
-          '#prefix' => '<div class="img">',
+          '#prefix' => '<div class="' . $class_image . '">',
           '#suffix' => '</div>',
         ];
       }
